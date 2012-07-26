@@ -17,9 +17,16 @@ def callback(bus, message):
 pipeline = gst.parse_launch("uridecodebin uri=%s name=src "
                             "src. ! queue ! tee name=audio  "
                             "src. ! queue ! tee name=video "
-                            "audio. ! queue ! audioconvert ! faac ! m. "
-                            "video. ! queue ! ffmpegcolorspace ! x264enc ! m. "
-                            "mp4mux name=m ! filesink location=/tmp/foo.mp4 " % sys.argv[1])
+                            "audio. ! queue ! audioconvert ! faac ! tee name=encoded_audio "
+                            "encoded_audio. ! queue ! m2. "
+                            "encoded_audio. ! queue ! m. "
+                            "encoded_audio. ! queue ! m3. "
+                            "video. ! queue ! ffmpegcolorspace ! x264enc bitrate=300 ! m. "
+                            "video. ! queue ! ffmpegcolorspace ! x264enc bitrate=500 ! m2. "
+                            "video. ! queue ! ffmpegcolorspace ! x264enc bitrate=1000 ! m3. "
+                            "mp4mux name=m3 ! filesink location=/tmp/v/foo3.mp4 "
+                            "mp4mux name=m2 ! filesink location=/tmp/v/foo2.mp4 "
+                            "mp4mux name=m ! filesink location=/tmp/v/foo.mp4 " % sys.argv[1])
 bus = pipeline.get_bus()
 bus.add_signal_watch()
 bus.connect("message", callback)
